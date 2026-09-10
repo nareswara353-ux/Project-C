@@ -1,7 +1,6 @@
 #include "lsm_config.h"
 
 #include <ctype.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,19 +30,19 @@ static void apply_option(LsmOptions *opts, const char *key, const char *value) {
     if (strcmp(key, "db_path") == 0) {
         opts->db_path = strdup(value);
     } else if (strcmp(key, "memtable_size_mb") == 0) {
-        opts->memtable_size_mb = atoi(value);
+        opts->memtable_size_mb = (size_t)atoi(value);
     } else if (strcmp(key, "max_open_files") == 0) {
-        opts->max_open_files = atoi(value);
+        opts->max_open_files = (size_t)atoi(value);
     } else if (strcmp(key, "enable_wal") == 0) {
         opts->enable_wal = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
     } else if (strcmp(key, "sync_wal") == 0) {
         opts->sync_wal = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
     } else if (strcmp(key, "block_size_kb") == 0) {
-        opts->block_size_kb = atoi(value);
+        opts->block_size_kb = (size_t)atoi(value);
     } else if (strcmp(key, "bloom_bits_per_key") == 0) {
-        opts->bloom_bits_per_key = atoi(value);
+        opts->bloom_bits_per_key = (size_t)atoi(value);
     } else if (strcmp(key, "compaction_interval_sec") == 0) {
-        opts->compaction_interval_sec = atoi(value);
+        opts->compaction_interval_sec = (size_t)atoi(value);
     }
 }
 
@@ -53,19 +52,19 @@ LsmOptions lsm_config_from_env(void) {
     if ((val = getenv("LSM_DB_PATH")))
         opts.db_path = val;
     if ((val = getenv("LSM_MEMTABLE_SIZE_MB")))
-        opts.memtable_size_mb = atoi(val);
+        opts.memtable_size_mb = (size_t)atoi(val);
     if ((val = getenv("LSM_MAX_OPEN_FILES")))
-        opts.max_open_files = atoi(val);
+        opts.max_open_files = (size_t)atoi(val);
     if ((val = getenv("LSM_ENABLE_WAL")))
         opts.enable_wal = (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
     if ((val = getenv("LSM_SYNC_WAL")))
         opts.sync_wal = (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
     if ((val = getenv("LSM_BLOCK_SIZE_KB")))
-        opts.block_size_kb = atoi(val);
+        opts.block_size_kb = (size_t)atoi(val);
     if ((val = getenv("LSM_BLOOM_BITS")))
-        opts.bloom_bits_per_key = atoi(val);
+        opts.bloom_bits_per_key = (size_t)atoi(val);
     if ((val = getenv("LSM_COMPACTION_INTERVAL")))
-        opts.compaction_interval_sec = atoi(val);
+        opts.compaction_interval_sec = (size_t)atoi(val);
     return opts;
 }
 
@@ -98,7 +97,7 @@ LsmStatus lsm_config_validate(const LsmOptions *opts) {
         return LSM_ERR_INVALID_ARG;
     if (opts->bloom_bits_per_key < 1 || opts->bloom_bits_per_key > 64)
         return LSM_ERR_INVALID_ARG;
-    if (opts->compaction_interval_sec < 0)
+    if (opts->compaction_interval_sec > 86400)
         return LSM_ERR_INVALID_ARG;
     return LSM_OK;
 }

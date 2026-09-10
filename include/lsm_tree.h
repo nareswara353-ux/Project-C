@@ -1,29 +1,11 @@
 #ifndef LSM_TREE_H
 #define LSM_TREE_H
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "lsm_types.h"
 
 typedef struct LsmTree LsmTree;
 typedef struct LsmIterator LsmIterator;
 typedef struct LsmOptions LsmOptions;
-
-typedef enum {
-    LSM_OK = 0,
-    LSM_ERR_IO,
-    LSM_ERR_CORRUPTION,
-    LSM_ERR_NOT_FOUND,
-    LSM_ERR_FULL,
-    LSM_ERR_INVALID_ARG,
-    LSM_ERR_MEMORY,
-    LSM_ERR_BUSY
-} LsmStatus;
-
-typedef struct {
-    const char *data;
-    size_t len;
-} LsmSlice;
 
 struct LsmOptions {
     const char *db_path;

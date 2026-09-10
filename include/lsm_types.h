@@ -1,11 +1,24 @@
 #ifndef LSM_TYPES_H
 #define LSM_TYPES_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+typedef enum {
+    LSM_OK = 0,
+    LSM_ERR_IO,
+    LSM_ERR_CORRUPTION,
+    LSM_ERR_NOT_FOUND,
+    LSM_ERR_FULL,
+    LSM_ERR_INVALID_ARG,
+    LSM_ERR_MEMORY,
+    LSM_ERR_BUSY
+} LsmStatus;
+
 typedef uint64_t SequenceNumber;
+
 typedef int (*LsmComparator)(const void *a, size_t len_a, const void *b, size_t len_b);
 
 typedef struct {
