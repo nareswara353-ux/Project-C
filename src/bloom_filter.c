@@ -1,19 +1,19 @@
-#include "lsm_types.h"
 #include "lsm_tree.h"
+#include "lsm_types.h"
+#include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <math.h>
 
 typedef struct {
-    uint8_t* bits;
+    uint8_t *bits;
     size_t bit_count;
     size_t byte_count;
     uint32_t num_hashes;
 } BloomFilter;
 
-static uint32_t hash_murmur(const void* key, size_t len, uint32_t seed) {
-    const uint8_t* data = key;
+static uint32_t hash_murmur(const void *key, size_t len, uint32_t seed) {
+    const uint8_t *data = key;
     uint32_t h = seed;
     uint32_t k;
     for (size_t i = 0; i + 4 <= len; i += 4) {
@@ -39,9 +39,10 @@ static uint32_t hash_murmur(const void* key, size_t len, uint32_t seed) {
     return h;
 }
 
-BloomFilter* bloom_filter_create(uint32_t num_entries, double false_positive_rate) {
-    BloomFilter* bf = malloc(sizeof(BloomFilter));
-    if (!bf) return NULL;
+BloomFilter *bloom_filter_create(uint32_t num_entries, double false_positive_rate) {
+    BloomFilter *bf = malloc(sizeof(BloomFilter));
+    if (!bf)
+        return NULL;
     double ln2 = 0.69314718056;
     bf->num_hashes = (uint32_t)ceil(-log(false_positive_rate) / ln2);
     bf->bit_count = (size_t)ceil((double)num_entries * bf->num_hashes / ln2);
@@ -54,14 +55,16 @@ BloomFilter* bloom_filter_create(uint32_t num_entries, double false_positive_rat
     return bf;
 }
 
-void bloom_filter_destroy(BloomFilter* bf) {
-    if (!bf) return;
+void bloom_filter_destroy(BloomFilter *bf) {
+    if (!bf)
+        return;
     free(bf->bits);
     free(bf);
 }
 
-void bloom_filter_add(BloomFilter* bf, LsmSlice key) {
-    if (!bf || !key.data || key.len == 0) return;
+void bloom_filter_add(BloomFilter *bf, LsmSlice key) {
+    if (!bf || !key.data || key.len == 0)
+        return;
     for (uint32_t i = 0; i < bf->num_hashes; i++) {
         uint32_t h = hash_murmur(key.data, key.len, i + 0x9747B28C);
         size_t bit_pos = h % bf->bit_count;
@@ -69,8 +72,9 @@ void bloom_filter_add(BloomFilter* bf, LsmSlice key) {
     }
 }
 
-bool bloom_filter_may_contain(const BloomFilter* bf, LsmSlice key) {
-    if (!bf || !key.data || key.len == 0) return false;
+bool bloom_filter_may_contain(const BloomFilter *bf, LsmSlice key) {
+    if (!bf || !key.data || key.len == 0)
+        return false;
     for (uint32_t i = 0; i < bf->num_hashes; i++) {
         uint32_t h = hash_murmur(key.data, key.len, i + 0x9747B28C);
         size_t bit_pos = h % bf->bit_count;
@@ -81,11 +85,13 @@ bool bloom_filter_may_contain(const BloomFilter* bf, LsmSlice key) {
     return true;
 }
 
-size_t bloom_filter_serialize(const BloomFilter* bf, uint8_t* out, size_t out_len) {
-    if (!bf || !out) return 0;
+size_t bloom_filter_serialize(const BloomFilter *bf, uint8_t *out, size_t out_len) {
+    if (!bf || !out)
+        return 0;
     size_t needed = sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint32_t) + bf->byte_count;
-    if (out_len < needed) return 0;
-    uint8_t* ptr = out;
+    if (out_len < needed)
+        return 0;
+    uint8_t *ptr = out;
     uint32_t num_hashes = bf->num_hashes;
     uint64_t bit_count = bf->bit_count;
     uint64_t byte_count = bf->byte_count;
@@ -99,9 +105,10 @@ size_t bloom_filter_serialize(const BloomFilter* bf, uint8_t* out, size_t out_le
     return needed;
 }
 
-BloomFilter* bloom_filter_deserialize(const uint8_t* data, size_t len) {
-    if (!data || len < sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint64_t)) return NULL;
-    const uint8_t* ptr = data;
+BloomFilter *bloom_filter_deserialize(const uint8_t *data, size_t len) {
+    if (!data || len < sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint64_t))
+        return NULL;
+    const uint8_t *ptr = data;
     uint32_t num_hashes;
     uint64_t bit_count;
     uint64_t byte_count;
@@ -111,9 +118,11 @@ BloomFilter* bloom_filter_deserialize(const uint8_t* data, size_t len) {
     ptr += sizeof(bit_count);
     memcpy(&byte_count, ptr, sizeof(byte_count));
     ptr += sizeof(byte_count);
-    if (len < sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint64_t) + byte_count) return NULL;
-    BloomFilter* bf = malloc(sizeof(BloomFilter));
-    if (!bf) return NULL;
+    if (len < sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint64_t) + byte_count)
+        return NULL;
+    BloomFilter *bf = malloc(sizeof(BloomFilter));
+    if (!bf)
+        return NULL;
     bf->num_hashes = num_hashes;
     bf->bit_count = (size_t)bit_count;
     bf->byte_count = (size_t)byte_count;

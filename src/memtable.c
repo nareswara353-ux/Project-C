@@ -79,9 +79,9 @@ LsmStatus memtable_put(void *handle, LsmInternalKey key, LsmSlice value) {
         return LSM_ERR_MEMORY;
     }
     for (int i = mt->max_level; i >= 0; i--) {
-        while (cur->next[i] && mt->cmp(cur->next[i]->key.user_key.data,
-                                       cur->next[i]->key.user_key.len, key.user_key.data,
-                                       key.user_key.len) < 0) {
+        while (cur->next[i] &&
+               mt->cmp(cur->next[i]->key.user_key.data, cur->next[i]->key.user_key.len,
+                       key.user_key.data, key.user_key.len) < 0) {
             cur = cur->next[i];
         }
         update[i] = cur;
@@ -92,9 +92,9 @@ LsmStatus memtable_put(void *handle, LsmInternalKey key, LsmSlice value) {
         update[i]->next[i] = e;
     }
     free(update);
-    atomic_fetch_add(&mt->size_bytes,
-                     sizeof(MemTableEntry) + (size_t)level * sizeof(MemTableEntry *) +
-                         key.user_key.len + value.len);
+    atomic_fetch_add(&mt->size_bytes, sizeof(MemTableEntry) +
+                                          (size_t)level * sizeof(MemTableEntry *) +
+                                          key.user_key.len + value.len);
     return LSM_OK;
 }
 
