@@ -16,6 +16,8 @@ static void trim(char *str) {
 }
 
 static void parse_key_value(char *line, char **key, char **value) {
+    *key = NULL;
+    *value = NULL;
     char *eq = strchr(line, '=');
     if (!eq)
         return;
@@ -75,12 +77,11 @@ LsmOptions lsm_config_from_file(const char *path) {
         return opts;
     char line[512];
     while (fgets(line, sizeof(line), f)) {
-        char *key;
-        char *value;
+        char *key = NULL;
+        char *value = NULL;
         parse_key_value(line, &key, &value);
-        if (key && value) {
+        if (key && value)
             apply_option(&opts, key, value);
-        }
     }
     fclose(f);
     return opts;
