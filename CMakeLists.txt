@@ -13,6 +13,11 @@ add_compile_options(-Wall -Wextra -Werror -pedantic)
 
 enable_testing()
 
+find_program(MEMORYCHECK_COMMAND NAMES valgrind)
+set(MEMORYCHECK_COMMAND_OPTIONS
+    "--leak-check=full --error-exitcode=1 --errors-for-leak-kinds=definite,indirect --track-origins=yes"
+    CACHE STRING "Valgrind options")
+
 add_subdirectory(src)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
   add_subdirectory(tests)

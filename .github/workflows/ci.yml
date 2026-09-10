@@ -104,13 +104,13 @@ jobs:
         run: |
           cmake -S . -B build-vg -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_C_FLAGS="-g -O0"
+            -DCMAKE_C_FLAGS="-g -O0" \
+            -DMEMORYCHECK_COMMAND=/usr/bin/valgrind \
+            -DMEMORYCHECK_COMMAND_OPTIONS="--leak-check=full --error-exitcode=1 --errors-for-leak-kinds=definite,indirect --track-origins=yes"
       - name: Build
         run: cmake --build build-vg
       - name: Run tests under Valgrind
-        run: |
-          ctest --test-dir build-vg --output-on-failure -T memcheck \
-            --overwrite MemoryCheckCommandOptions="--leak-check=full --error-exitcode=1 --errors-for-leak-kinds=definite,indirect --track-origins=yes"
+        run: ctest --test-dir build-vg --output-on-failure -T memcheck
 
   coverage:
     name: Coverage
