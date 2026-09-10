@@ -1,6 +1,5 @@
 BasedOnStyle: LLVM
 Language: Cpp
-Standard: c17
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
@@ -12,8 +11,6 @@ AllowShortLoopsOnASingleLine: false
 PointerAlignment: Right
 DerivePointerAlignment: false
 AlignAfterOpenBracket: Align
-AlignConsecutiveAssignments: false
-AlignConsecutiveDeclarations: false
 AlignOperands: true
 AlignTrailingComments: true
 SpaceAfterCStyleCast: false
