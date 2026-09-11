@@ -7,13 +7,14 @@
 #include <string.h>
 #include <unistd.h>
 
-#define CHECK(cond)                                                                                \
-    do {                                                                                           \
-        if (!(cond)) {                                                                             \
-            fprintf(stderr, "CHECK failed at %s:%d: %s\n", __FILE__, __LINE__, #cond);            \
-            exit(1);                                                                               \
-        }                                                                                          \
-    } while (0)
+static void check_impl(int ok, const char *expr, const char *file, int line) {
+    if (!ok) {
+        fprintf(stderr, "CHECK failed at %s:%d: %s\n", file, line, expr);
+        exit(1);
+    }
+}
+
+#define CHECK(cond) check_impl((cond) ? 1 : 0, #cond, __FILE__, __LINE__)
 
 typedef struct Wal Wal;
 typedef void (*WalRecoverCallback)(uint8_t op, LsmSlice key, LsmSlice value, SequenceNumber seq,
