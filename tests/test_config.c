@@ -41,11 +41,14 @@ static void test_defaults(void) {
     CHECK(o.block_size_kb == 4);
     CHECK(o.bloom_bits_per_key == 10);
     CHECK(o.compaction_interval_sec == 60);
+    CHECK(o.owns_db_path == false);
     CHECK(lsm_config_validate(&o) == LSM_OK);
+    lsm_options_destroy(&o);
 }
 
 static void test_env_override(void) {
     clear_env();
+    setenv("LSM_DB_PATH", "/tmp/lsm_env_path", 1);
     setenv("LSM_MEMTABLE_SIZE_MB", "64", 1);
     setenv("LSM_MAX_OPEN_FILES", "512", 1);
     setenv("LSM_ENABLE_WAL", "true", 1);
@@ -55,6 +58,9 @@ static void test_env_override(void) {
     setenv("LSM_COMPACTION_INTERVAL", "120", 1);
 
     LsmOptions o = lsm_config_from_env();
+    CHECK(o.db_path != NULL);
+    CHECK(strcmp(o.db_path, "/tmp/lsm_env_path") == 0);
+    CHECK(o.owns_db_path == true);
     CHECK(o.memtable_size_mb == 64);
     CHECK(o.max_open_files == 512);
     CHECK(o.enable_wal == true);
@@ -63,6 +69,7 @@ static void test_env_override(void) {
     CHECK(o.bloom_bits_per_key == 12);
     CHECK(o.compaction_interval_sec == 120);
     CHECK(lsm_config_validate(&o) == LSM_OK);
+    lsm_options_destroy(&o);
 
     clear_env();
 }
@@ -75,6 +82,7 @@ static void test_env_falsy(void) {
     LsmOptions o = lsm_config_from_env();
     CHECK(o.enable_wal == false);
     CHECK(o.sync_wal == false);
+    lsm_options_destroy(&o);
 
     clear_env();
 }
@@ -83,6 +91,7 @@ static void test_file_override(void) {
     const char *path = "/tmp/lsm_test_config.cfg";
     FILE *f = fopen(path, "w");
     CHECK(f != NULL);
+    fprintf(f, "db_path = /tmp/lsm_file_path\n");
     fprintf(f, "memtable_size_mb = 32\n");
     fprintf(f, "max_open_files = 256\n");
     fprintf(f, "enable_wal = true\n");
@@ -93,6 +102,9 @@ static void test_file_override(void) {
     fclose(f);
 
     LsmOptions o = lsm_config_from_file(path);
+    CHECK(o.db_path != NULL);
+    CHECK(strcmp(o.db_path, "/tmp/lsm_file_path") == 0);
+    CHECK(o.owns_db_path == true);
     CHECK(o.memtable_size_mb == 32);
     CHECK(o.max_open_files == 256);
     CHECK(o.enable_wal == true);
@@ -101,6 +113,7 @@ static void test_file_override(void) {
     CHECK(o.bloom_bits_per_key == 8);
     CHECK(o.compaction_interval_sec == 300);
     CHECK(lsm_config_validate(&o) == LSM_OK);
+    lsm_options_destroy(&o);
 
     unlink(path);
 }
@@ -109,7 +122,9 @@ static void test_file_missing(void) {
     LsmOptions o = lsm_config_from_file("/tmp/lsm_test_config_does_not_exist.cfg");
     CHECK(o.db_path != NULL);
     CHECK(o.memtable_size_mb == 4);
+    CHECK(o.owns_db_path == false);
     CHECK(lsm_config_validate(&o) == LSM_OK);
+    lsm_options_destroy(&o);
 }
 
 static void test_file_ignores_comments(void) {
@@ -124,6 +139,7 @@ static void test_file_ignores_comments(void) {
     LsmOptions o = lsm_config_from_file(path);
     CHECK(o.memtable_size_mb == 16);
     CHECK(o.max_open_files == 128);
+    lsm_options_destroy(&o);
 
     unlink(path);
 }

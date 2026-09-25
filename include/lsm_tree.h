@@ -16,6 +16,7 @@ struct LsmOptions {
     size_t block_size_kb;
     size_t bloom_bits_per_key;
     size_t compaction_interval_sec;
+    bool owns_db_path;
 };
 
 LsmStatus lsm_open(const LsmOptions *options, LsmTree **out);
@@ -30,5 +31,6 @@ LsmSlice lsm_iterator_value(const LsmIterator *it);
 void lsm_iterator_destroy(LsmIterator *it);
 void lsm_close(LsmTree *tree);
 LsmOptions lsm_options_default(void);
+void lsm_options_destroy(LsmOptions *opts);
 
 #endif

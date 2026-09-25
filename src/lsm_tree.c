@@ -1,9 +1,8 @@
 #include "lsm_tree.h"
 #include "lsm_types.h"
-#include <fcntl.h>
+
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 struct LsmTree {
     LsmOptions opts;
@@ -22,10 +21,13 @@ LsmOptions lsm_options_default(void) {
     opts.block_size_kb = 4;
     opts.bloom_bits_per_key = 10;
     opts.compaction_interval_sec = 60;
+    opts.owns_db_path = false;
     return opts;
 }
 
 LsmStatus lsm_open(const LsmOptions *options, LsmTree **out) {
+    if (!options || !out)
+        return LSM_ERR_INVALID_ARG;
     LsmTree *tree = malloc(sizeof(LsmTree));
     if (!tree)
         return LSM_ERR_MEMORY;
@@ -90,7 +92,10 @@ void lsm_iterator_destroy(LsmIterator *it) {
 }
 
 void lsm_close(LsmTree *tree) {
-    if (tree) {
-        free(tree);
+    if (!tree)
+        return;
+    if (tree->opts.owns_db_path && tree->opts.db_path) {
+        free((void *)tree->opts.db_path);
     }
+    free(tree);
 }

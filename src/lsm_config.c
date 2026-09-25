@@ -28,9 +28,20 @@ static void parse_key_value(char *line, char **key, char **value) {
     trim(*value);
 }
 
+static void set_db_path(LsmOptions *opts, const char *value) {
+    char *copy = strdup(value);
+    if (!copy)
+        return;
+    if (opts->owns_db_path && opts->db_path) {
+        free((void *)opts->db_path);
+    }
+    opts->db_path = copy;
+    opts->owns_db_path = true;
+}
+
 static void apply_option(LsmOptions *opts, const char *key, const char *value) {
     if (strcmp(key, "db_path") == 0) {
-        opts->db_path = strdup(value);
+        set_db_path(opts, value);
     } else if (strcmp(key, "memtable_size_mb") == 0) {
         opts->memtable_size_mb = (size_t)atoi(value);
     } else if (strcmp(key, "max_open_files") == 0) {
@@ -52,7 +63,7 @@ LsmOptions lsm_config_from_env(void) {
     LsmOptions opts = lsm_options_default();
     const char *val;
     if ((val = getenv("LSM_DB_PATH")))
-        opts.db_path = val;
+        set_db_path(&opts, val);
     if ((val = getenv("LSM_MEMTABLE_SIZE_MB")))
         opts.memtable_size_mb = (size_t)atoi(val);
     if ((val = getenv("LSM_MAX_OPEN_FILES")))
@@ -101,4 +112,14 @@ LsmStatus lsm_config_validate(const LsmOptions *opts) {
     if (opts->compaction_interval_sec > 86400)
         return LSM_ERR_INVALID_ARG;
     return LSM_OK;
+}
+
+void lsm_options_destroy(LsmOptions *opts) {
+    if (!opts)
+        return;
+    if (opts->owns_db_path && opts->db_path) {
+        free((void *)opts->db_path);
+    }
+    opts->db_path = NULL;
+    opts->owns_db_path = false;
 }
