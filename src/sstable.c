@@ -1,3 +1,5 @@
+#include "sstable.h"
+
 #include "lsm_tree.h"
 #include "lsm_types.h"
 
@@ -18,11 +20,6 @@ typedef struct {
     uint64_t num_entries;
     uint32_t magic;
 } SSTFooter;
-
-typedef struct {
-    LsmSlice key;
-    LsmSlice value;
-} SstableEntry;
 
 typedef struct {
     LsmSlice key;
@@ -177,6 +174,11 @@ LsmStatus sstable_open(const char *path, void **out) {
     }
     sst->fd = fd;
     sst->path = strdup(path);
+    if (!sst->path) {
+        free(sst);
+        close(fd);
+        return LSM_ERR_MEMORY;
+    }
     sst->data_offset = footer.data_offset;
     sst->data_len = footer.data_len;
     sst->index_offset = footer.index_offset;
