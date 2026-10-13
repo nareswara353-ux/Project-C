@@ -1,5 +1,6 @@
 #include "lsm_tree.h"
 #include "lsm_types.h"
+#include "wal.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -15,17 +16,6 @@ static void check_impl(int ok, const char *expr, const char *file, int line) {
 }
 
 #define CHECK(cond) check_impl((cond) ? 1 : 0, #cond, __FILE__, __LINE__)
-
-typedef struct Wal Wal;
-typedef void (*WalRecoverCallback)(uint8_t op, LsmSlice key, LsmSlice value, SequenceNumber seq,
-                                   void *user);
-
-extern LsmStatus wal_open(const char *path, bool sync, Wal **out);
-extern LsmStatus wal_append_put(Wal *wal, LsmSlice key, LsmSlice value, SequenceNumber seq);
-extern LsmStatus wal_append_delete(Wal *wal, LsmSlice key, SequenceNumber seq);
-extern LsmStatus wal_sync(Wal *wal);
-extern void wal_close(Wal *wal);
-extern LsmStatus wal_recover(Wal *wal, WalRecoverCallback cb, void *user);
 
 typedef struct {
     int count;
