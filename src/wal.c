@@ -1,3 +1,5 @@
+#include "wal.h"
+
 #include "lsm_tree.h"
 #include "lsm_types.h"
 
@@ -10,12 +12,12 @@
 
 typedef enum { WAL_OP_PUT = 1, WAL_OP_DELETE = 2 } WalOp;
 
-typedef struct Wal {
+struct Wal {
     int fd;
     char *path;
     bool sync;
     size_t offset;
-} Wal;
+};
 
 static LsmStatus wal_open_fd(const char *path, bool sync, Wal **out) {
     Wal *w = malloc(sizeof(Wal));
@@ -28,6 +30,11 @@ static LsmStatus wal_open_fd(const char *path, bool sync, Wal **out) {
     }
     w->fd = fd;
     w->path = strdup(path);
+    if (!w->path) {
+        close(fd);
+        free(w);
+        return LSM_ERR_MEMORY;
+    }
     w->sync = sync;
     w->offset = (size_t)lseek(fd, 0, SEEK_END);
     *out = w;
@@ -90,9 +97,6 @@ void wal_close(Wal *wal) {
     free(wal->path);
     free(wal);
 }
-
-typedef void (*WalRecoverCallback)(uint8_t op, LsmSlice key, LsmSlice value, SequenceNumber seq,
-                                   void *user);
 
 LsmStatus wal_recover(Wal *wal, WalRecoverCallback cb, void *user) {
     if (!wal || !cb)
