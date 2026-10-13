@@ -1,3 +1,4 @@
+#include "bloom_filter.h"
 #include "lsm_tree.h"
 #include "lsm_types.h"
 
@@ -15,27 +16,16 @@ static void check_impl(int ok, const char *expr, const char *file, int line) {
 
 #define CHECK(cond) check_impl((cond) ? 1 : 0, #cond, __FILE__, __LINE__)
 
-typedef struct BloomFilter BloomFilter;
-
-extern BloomFilter *bloom_filter_create(uint32_t num_entries, double false_positive_rate);
-extern void bloom_filter_destroy(BloomFilter *bf);
-extern void bloom_filter_add(BloomFilter *bf, LsmSlice key);
-extern bool bloom_filter_may_contain(const BloomFilter *bf, LsmSlice key);
-extern size_t bloom_filter_serialize(const BloomFilter *bf, uint8_t *out, size_t out_len);
-extern BloomFilter *bloom_filter_deserialize(const uint8_t *data, size_t len);
-
 static void test_bloom_contains(void) {
     BloomFilter *bf = bloom_filter_create(1000, 0.01);
     CHECK(bf != NULL);
 
     const char *keys[] = {"alpha", "beta", "gamma", "delta", "epsilon"};
     size_t n = sizeof(keys) / sizeof(keys[0]);
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++)
         bloom_filter_add(bf, lsm_slice_str(keys[i]));
-    }
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++)
         CHECK(bloom_filter_may_contain(bf, lsm_slice_str(keys[i])) == true);
-    }
 
     bloom_filter_destroy(bf);
 }
@@ -111,11 +101,19 @@ static void test_bloom_null_args(void) {
     CHECK(bloom_filter_deserialize(NULL, 100) == NULL);
 }
 
+static void test_bloom_invalid_create(void) {
+    CHECK(bloom_filter_create(0, 0.01) == NULL);
+    CHECK(bloom_filter_create(100, 0.0) == NULL);
+    CHECK(bloom_filter_create(100, 1.0) == NULL);
+    CHECK(bloom_filter_create(100, -0.5) == NULL);
+}
+
 int main(void) {
     test_bloom_contains();
     test_bloom_false_positive_rate();
     test_bloom_serialize_roundtrip();
     test_bloom_null_args();
+    test_bloom_invalid_create();
     puts("test_bloom: OK");
     return 0;
 }
