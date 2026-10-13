@@ -1,5 +1,6 @@
 #include "lsm_tree.h"
 #include "lsm_types.h"
+#include "sstable.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,16 +15,6 @@ static void check_impl(int ok, const char *expr, const char *file, int line) {
 }
 
 #define CHECK(cond) check_impl((cond) ? 1 : 0, #cond, __FILE__, __LINE__)
-
-typedef struct {
-    LsmSlice key;
-    LsmSlice value;
-} SstableEntry;
-
-extern LsmStatus sstable_build(const char *path, const SstableEntry *entries, size_t count);
-extern LsmStatus sstable_open(const char *path, void **out);
-extern LsmStatus sstable_get(void *handle, LsmSlice key, LsmSlice *out_value);
-extern void sstable_close(void *handle);
 
 static void test_sstable_roundtrip(void) {
     const char *path = "/tmp/lsm_test_sstable_roundtrip.sst";
