@@ -1,5 +1,6 @@
 #include "lsm_tree.h"
 #include "lsm_types.h"
+#include "memtable.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,17 +14,6 @@ static void check_impl(int ok, const char *expr, const char *file, int line) {
 }
 
 #define CHECK(cond) check_impl((cond) ? 1 : 0, #cond, __FILE__, __LINE__)
-
-extern void *memtable_create(LsmComparator cmp);
-extern void memtable_destroy(void *handle);
-extern LsmStatus memtable_put(void *handle, LsmInternalKey key, LsmSlice value);
-extern LsmStatus memtable_get(void *handle, LsmSlice key, LsmSlice *out_value);
-extern size_t memtable_size(void *handle);
-extern void *memtable_iterator(void *handle);
-extern void memtable_iterator_next(void *iter);
-extern LsmSlice memtable_iterator_key(void *iter);
-extern LsmSlice memtable_iterator_value(void *iter);
-extern bool memtable_iterator_valid(void *iter);
 
 static int bytewise_cmp(const void *a, size_t la, const void *b, size_t lb) {
     size_t min_len = la < lb ? la : lb;
@@ -86,13 +76,10 @@ static void test_memtable_iterator(void) {
     CHECK(memtable_put(mt, k2, lsm_slice_str("v2")) == LSM_OK);
     CHECK(memtable_put(mt, k3, lsm_slice_str("v3")) == LSM_OK);
 
-    void *it = memtable_iterator(mt);
     int seen = 0;
-    while (memtable_iterator_valid(it)) {
-        LsmSlice key = memtable_iterator_key(it);
-        LsmSlice value = memtable_iterator_value(it);
-        CHECK(key.len > 0);
-        CHECK(value.len > 0);
+    for (void *it = memtable_iterator(mt); memtable_iterator_valid(it);) {
+        CHECK(memtable_iterator_key(it).len > 0);
+        CHECK(memtable_iterator_value(it).len > 0);
         seen++;
         memtable_iterator_next(it);
         it = memtable_iterator(mt);
