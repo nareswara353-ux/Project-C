@@ -1,5 +1,8 @@
 #include "lsm_tree.h"
 #include "lsm_types.h"
+#include "memtable.h"
+#include "sstable.h"
+#include "wal.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,31 +17,6 @@ static void check_impl(int ok, const char *expr, const char *file, int line) {
 }
 
 #define CHECK(cond) check_impl((cond) ? 1 : 0, #cond, __FILE__, __LINE__)
-
-typedef struct Wal Wal;
-typedef void (*WalRecoverCallback)(uint8_t op, LsmSlice key, LsmSlice value, SequenceNumber seq,
-                                   void *user);
-
-typedef struct {
-    LsmSlice key;
-    LsmSlice value;
-} SstableEntry;
-
-extern void *memtable_create(LsmComparator cmp);
-extern void memtable_destroy(void *handle);
-extern LsmStatus memtable_put(void *handle, LsmInternalKey key, LsmSlice value);
-extern LsmStatus memtable_get(void *handle, LsmSlice key, LsmSlice *out_value);
-
-extern LsmStatus wal_open(const char *path, bool sync, Wal **out);
-extern LsmStatus wal_append_put(Wal *wal, LsmSlice key, LsmSlice value, SequenceNumber seq);
-extern LsmStatus wal_sync(Wal *wal);
-extern void wal_close(Wal *wal);
-extern LsmStatus wal_recover(Wal *wal, WalRecoverCallback cb, void *user);
-
-extern LsmStatus sstable_build(const char *path, const SstableEntry *entries, size_t count);
-extern LsmStatus sstable_open(const char *path, void **out);
-extern LsmStatus sstable_get(void *handle, LsmSlice key, LsmSlice *out_value);
-extern void sstable_close(void *handle);
 
 static int bytewise_cmp(const void *a, size_t la, const void *b, size_t lb) {
     size_t min_len = la < lb ? la : lb;
