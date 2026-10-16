@@ -1,5 +1,7 @@
-#include "lsm_tree.h"
+#include "wal.h"
+
 #include "lsm_types.h"
+#include "memtable.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -8,13 +10,13 @@
 
 typedef enum { WAL_OP_PUT = 1, WAL_OP_DELETE = 2 } WalOp;
 
-struct WalReader {
+typedef struct {
     int fd;
     char *path;
-};
+} WalReader;
 
-static LsmStatus wal_reader_open(const char *path, struct WalReader **out) {
-    struct WalReader *r = malloc(sizeof(struct WalReader));
+static LsmStatus wal_reader_open(const char *path, WalReader **out) {
+    WalReader *r = malloc(sizeof(WalReader));
     if (!r)
         return LSM_ERR_MEMORY;
     int fd = open(path, O_RDONLY);
@@ -24,11 +26,16 @@ static LsmStatus wal_reader_open(const char *path, struct WalReader **out) {
     }
     r->fd = fd;
     r->path = strdup(path);
+    if (!r->path) {
+        close(fd);
+        free(r);
+        return LSM_ERR_MEMORY;
+    }
     *out = r;
     return LSM_OK;
 }
 
-static void wal_reader_close(struct WalReader *r) {
+static void wal_reader_close(WalReader *r) {
     if (!r)
         return;
     close(r->fd);
@@ -39,7 +46,7 @@ static void wal_reader_close(struct WalReader *r) {
 typedef void (*WalRecordHandler)(uint8_t op, LsmSlice key, LsmSlice value, uint64_t seq,
                                  void *user);
 
-static LsmStatus wal_reader_read_all(struct WalReader *r, WalRecordHandler handler, void *user) {
+static LsmStatus wal_reader_read_all(WalReader *r, WalRecordHandler handler, void *user) {
     if (!r || !handler)
         return LSM_ERR_INVALID_ARG;
     if (lseek(r->fd, 0, SEEK_SET) < 0)
@@ -78,7 +85,6 @@ static void replay_handler(uint8_t op, LsmSlice key, LsmSlice value, uint64_t se
     if (!memtable)
         return;
     LsmInternalKey ik = {key, seq};
-    extern LsmStatus memtable_put(void *handle, LsmInternalKey key, LsmSlice value);
     if (op == WAL_OP_PUT) {
         memtable_put(memtable, ik, value);
     } else if (op == WAL_OP_DELETE) {
@@ -90,7 +96,7 @@ static void replay_handler(uint8_t op, LsmSlice key, LsmSlice value, uint64_t se
 LsmStatus wal_replay_into_memtable(const char *wal_path, void *memtable) {
     if (!wal_path || !memtable)
         return LSM_ERR_INVALID_ARG;
-    struct WalReader *r = NULL;
+    WalReader *r = NULL;
     LsmStatus st = wal_reader_open(wal_path, &r);
     if (st != LSM_OK)
         return st;
