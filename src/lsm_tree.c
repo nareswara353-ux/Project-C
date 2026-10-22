@@ -1,4 +1,6 @@
 #include "lsm_tree.h"
+
+#include "lsm_iterator.h"
 #include "lsm_types.h"
 
 #include <stdlib.h>
@@ -62,40 +64,14 @@ LsmStatus lsm_delete(LsmTree *tree, LsmSlice key) {
 LsmStatus lsm_iterator(LsmTree *tree, LsmIterator **out) {
     if (!tree || !out)
         return LSM_ERR_INVALID_ARG;
-    *out = NULL;
-    return LSM_OK;
-}
-
-bool lsm_iterator_valid(const LsmIterator *it) {
-    (void)it;
-    return false;
-}
-
-void lsm_iterator_next(LsmIterator *it) {
-    (void)it;
-}
-
-LsmSlice lsm_iterator_key(const LsmIterator *it) {
-    (void)it;
-    LsmSlice s = {NULL, 0};
-    return s;
-}
-
-LsmSlice lsm_iterator_value(const LsmIterator *it) {
-    (void)it;
-    LsmSlice s = {NULL, 0};
-    return s;
-}
-
-void lsm_iterator_destroy(LsmIterator *it) {
-    (void)it;
+    *out = lsm_iterator_from_impl(NULL, NULL);
+    return *out ? LSM_OK : LSM_ERR_MEMORY;
 }
 
 void lsm_close(LsmTree *tree) {
     if (!tree)
         return;
-    if (tree->opts.owns_db_path && tree->opts.db_path) {
+    if (tree->opts.owns_db_path && tree->opts.db_path)
         free((void *)tree->opts.db_path);
-    }
     free(tree);
 }
