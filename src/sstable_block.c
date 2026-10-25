@@ -1,24 +1,11 @@
+#include "internal/checksum.h"
+
 #include "lsm_tree.h"
 #include "lsm_types.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-static uint32_t crc32_block(const void *data, size_t len) {
-    uint32_t crc = 0xFFFFFFFF;
-    const uint8_t *bytes = data;
-    for (size_t i = 0; i < len; i++) {
-        crc ^= bytes[i];
-        for (int j = 0; j < 8; j++) {
-            if (crc & 1)
-                crc = (crc >> 1) ^ 0xEDB88320;
-            else
-                crc >>= 1;
-        }
-    }
-    return ~crc;
-}
 
 size_t block_max_compressed_len(size_t input_len) {
     return input_len + 16;
@@ -45,9 +32,9 @@ LsmStatus block_decompress(const void *input, size_t input_len, void *output, si
 }
 
 uint32_t block_checksum(const void *data, size_t len) {
-    return crc32_block(data, len);
+    return lsm_checksum_crc32c(data, len);
 }
 
 bool block_checksum_verify(const void *data, size_t len, uint32_t expected) {
-    return block_checksum(data, len) == expected;
+    return lsm_checksum_verify(data, len, expected);
 }
